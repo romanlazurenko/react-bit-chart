@@ -1,13 +1,6 @@
-import {
-  AreaChart,
-  Area,
-  XAxis,
-  YAxis,
-  CartesianGrid,
-  Tooltip,
-  ResponsiveContainer,
-  ReferenceLine,
-} from "recharts";
+import React from "react";
+import ReactApexChart from "react-apexcharts";
+import { ApexOptions } from "apexcharts";
 import { Trade } from "../services/BinanceService";
 
 interface PriceChangeChartProps {
@@ -20,89 +13,74 @@ interface PriceChangeChartProps {
 export function PriceChangeChart({
   trades,
   xDomain,
-  onPauseChange,
   children,
 }: PriceChangeChartProps) {
-  const handleMouseDown = () => onPauseChange(true);
-  const handleMouseUp = () => onPauseChange(false);
-  const handleMouseLeave = () => onPauseChange(false);
+  const candleData = trades.map((trade) => ({
+    x: trade.time,
+    y: [trade.open, trade.high, trade.low, trade.close],
+  }));
+
+  const options: ApexOptions = {
+    chart: {
+      type: "candlestick",
+      height: 460,
+      animations: {
+        enabled: false,
+      },
+      toolbar: {
+        show: false,
+      },
+    },
+    xaxis: {
+      type: "datetime",
+      min: typeof xDomain[0] === "number" ? xDomain[0] : undefined,
+      max: typeof xDomain[1] === "number" ? xDomain[1] : undefined,
+      labels: {
+        datetimeUTC: false,
+        format: "HH:mm",
+      },
+      tickAmount: 8,
+    },
+    yaxis: {
+      tooltip: {
+        enabled: true,
+      },
+      labels: {
+        formatter: (value) => `$${value.toFixed(2)}`,
+      },
+    },
+    plotOptions: {
+      candlestick: {
+        colors: {
+          upward: "#26a69a",
+          downward: "#ef5350",
+        },
+        wick: {
+          useFillColor: true,
+        },
+      },
+    },
+    tooltip: {
+      enabled: true,
+      theme: "dark",
+      x: {
+        format: "yyyy-MM-dd HH:mm:ss",
+      },
+      y: {
+        formatter: (value) => `$${value.toFixed(2)}`,
+      },
+    },
+  };
 
   return (
     <div style={{ width: "100%", height: "460px" }}>
-      <ResponsiveContainer>
-        <AreaChart
-          data={trades}
-          margin={{ top: 20, right: 30, left: 20, bottom: 60 }}
-          onMouseDown={handleMouseDown}
-          onMouseUp={handleMouseUp}
-          onMouseLeave={handleMouseLeave}
-        >
-          <CartesianGrid strokeDasharray="3 3" />
-          <XAxis
-            dataKey="time"
-            domain={xDomain}
-            tickFormatter={(time) => new Date(time).toLocaleTimeString()}
-            type="number"
-            scale="time"
-            interval="preserveStartEnd"
-            allowDataOverflow={true}
-            tick={{ fontSize: 12 }}
-            tickCount={8}
-            minTickGap={50}
-          />
-          <YAxis
-            domain={["auto", "auto"]}
-            tickFormatter={(value) => `$${value.toFixed(2)}`}
-            label={{
-              value: "Price Change (USD)",
-              angle: -90,
-              position: "insideLeft",
-            }}
-            width={120}
-            allowDataOverflow={true}
-          />
-          <Tooltip
-            labelFormatter={(time) => new Date(time).toLocaleString()}
-            formatter={(value: number, name: string) => {
-              if (name === "positive") {
-                return [`+$${value.toFixed(2)}`, "Increase"];
-              }
-              if (name === "negative") {
-                return [`-$${Math.abs(value).toFixed(2)}`, "Decrease"];
-              }
-              return [`$${value.toFixed(2)}`, name];
-            }}
-          />
-          <ReferenceLine y={0} stroke="#666" />
-          <defs>
-            <linearGradient id="colorPositive" x1="0" y1="0" x2="0" y2="1">
-              <stop offset="5%" stopColor="#82ca9d" stopOpacity={0.8} />
-              <stop offset="95%" stopColor="#82ca9d" stopOpacity={0} />
-            </linearGradient>
-            <linearGradient id="colorNegative" x1="0" y1="0" x2="0" y2="1">
-              <stop offset="5%" stopColor="#ff7777" stopOpacity={0.8} />
-              <stop offset="95%" stopColor="#ff7777" stopOpacity={0} />
-            </linearGradient>
-          </defs>
-          <Area
-            type="monotone"
-            dataKey={(data) => (data.change > 0 ? data.change : 0)}
-            stroke="#82ca9d"
-            fill="url(#colorPositive)"
-            name="positive"
-            isAnimationActive={false}
-          />
-          <Area
-            type="monotone"
-            dataKey={(data) => (data.change < 0 ? data.change : 0)}
-            stroke="#ff7777"
-            fill="url(#colorNegative)"
-            name="negative"
-            isAnimationActive={false}
-          />
-          {children}
-        </AreaChart>
-      </ResponsiveContainer>
+      <ReactApexChart
+        options={options}
+        series={[{ data: candleData }]}
+        type="candlestick"
+        height={460}
+      />
+      {children}
     </div>
   );
 }

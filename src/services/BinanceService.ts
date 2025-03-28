@@ -1,7 +1,11 @@
 export interface Trade {
   time: number;
-  price: number;
-  change: number;
+  open: number;
+  high: number;
+  low: number;
+  close: number;
+  volume: number;
+  isClosed: boolean;
 }
 
 export interface BinanceKline {
@@ -11,7 +15,7 @@ export interface BinanceKline {
 
 export class BinanceService {
   private ws: WebSocket | null = null;
-  private lastPrice: number | null = null;
+  private reconnectInterval: ReturnType<typeof setInterval> | null = null;
 
   constructor(
     private onTrade: (trade: Trade) => void,
@@ -19,76 +23,98 @@ export class BinanceService {
   ) {}
 
   async fetchHistoricalData(): Promise<Trade[]> {
-    const today = new Date();
-    today.setUTCHours(0, 0, 0, 0);
+    return this.fetchKlines(0);
+  }
+
+  async fetchKlines(minutes: number = 0): Promise<Trade[]> {
+    const now = Date.now();
+    const startTime =
+      minutes === 0
+        ? new Date().setHours(0, 0, 0, 0)
+        : now - minutes * 60 * 1000;
 
     const response = await fetch(
-      `https://api.binance.com/api/v3/klines?symbol=BTCUSDT&interval=1m&startTime=${today.getTime()}&limit=1000`
+      `https://api.binance.com/api/v3/klines?symbol=BTCUSDT&interval=1m&startTime=${startTime}&endTime=${now}&limit=1440`
     );
 
     const klines = await response.json();
-    return klines.map((kline: any, index: number, arr: any[]) => {
-      const closePrice = parseFloat(kline[4]);
-      const prevClose = index > 0 ? parseFloat(arr[index - 1][4]) : closePrice;
-
-      return {
-        time: kline[0],
-        price: closePrice,
-        change: closePrice - prevClose,
-      };
-    });
+    return klines.map((kline: any) => ({
+      time: kline[0],
+      open: parseFloat(kline[1]),
+      high: parseFloat(kline[2]),
+      low: parseFloat(kline[3]),
+      close: parseFloat(kline[4]),
+      volume: parseFloat(kline[5]),
+      isClosed: true,
+    }));
   }
+
+  private lastKlineTime: number | null = null;
 
   connect() {
     this.ws = new WebSocket(
-      "wss://stream.binance.com:9443/stream?streams=btcusdt@trade/btcusdt@kline_1m"
+      "wss://stream.binance.com:443/stream?streams=btcusdt@kline_1m"
     );
 
     this.ws.onopen = () => {
       this.onConnectionChange(true);
+      this.setupReconnection();
     };
 
     this.ws.onclose = () => {
       this.onConnectionChange(false);
+      if (this.reconnectInterval) {
+        clearInterval(this.reconnectInterval);
+      }
       setTimeout(() => this.connect(), 5000);
     };
 
     this.ws.onmessage = (event) => {
       const data = JSON.parse(event.data);
-      if (data.stream === "btcusdt@trade") {
-        this.handleTradeMessage(data.data);
+      if (data.stream === "btcusdt@kline_1m") {
+        this.handleKlineMessage(data.data);
       }
     };
-
-    this.setupPing();
   }
 
-  private handleTradeMessage(trade: any) {
-    const currentPrice = parseFloat(trade.p);
-    const change = this.lastPrice !== null ? currentPrice - this.lastPrice : 0;
+  private handleKlineMessage(data: any) {
+    const kline = data.k;
+    const klineTime = kline.t;
 
-    this.onTrade({
-      time: trade.T,
-      price: currentPrice,
-      change: change,
-    });
+    if (!this.lastKlineTime || klineTime >= this.lastKlineTime) {
+      this.onTrade({
+        time: klineTime,
+        open: parseFloat(kline.o),
+        high: parseFloat(kline.h),
+        low: parseFloat(kline.l),
+        close: parseFloat(kline.c),
+        volume: parseFloat(kline.v),
+        isClosed: kline.x,
+      });
 
-    this.lastPrice = currentPrice;
-  }
-
-  private setupPing() {
-    const pingInterval = setInterval(() => {
-      if (this.ws?.readyState === WebSocket.OPEN) {
-        this.ws.send(JSON.stringify({ method: "PING" }));
+      if (kline.x) {
+        this.lastKlineTime = klineTime;
       }
-    }, 30000);
+    }
+  }
 
-    return () => clearInterval(pingInterval);
+  private setupReconnection() {
+    this.reconnectInterval = setInterval(() => {
+      if (this.ws) {
+        this.ws.close();
+        this.connect();
+      }
+    }, 23 * 60 * 60 * 1000);
   }
 
   disconnect() {
+    if (this.reconnectInterval) {
+      clearInterval(this.reconnectInterval);
+      this.reconnectInterval = null;
+    }
     if (this.ws) {
       this.ws.close();
+      this.ws = null;
     }
   }
 }

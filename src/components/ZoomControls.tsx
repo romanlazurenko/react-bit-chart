@@ -14,7 +14,7 @@ export function ZoomControls({ onZoomChange }: ZoomControlsProps) {
   return (
     <div style={{ marginTop: "1rem", textAlign: "center" }}>
       <button onClick={() => onZoomChange(null)} style={buttonStyle}>
-        Reset Zoom
+        Full Day
       </button>
       <button onClick={() => onZoomChange(15)} style={buttonStyle}>
         15m
@@ -24,6 +24,9 @@ export function ZoomControls({ onZoomChange }: ZoomControlsProps) {
       </button>
       <button onClick={() => onZoomChange(240)} style={buttonStyle}>
         4h
+      </button>
+      <button onClick={() => onZoomChange(720)} style={buttonStyle}>
+        12h
       </button>
     </div>
   );

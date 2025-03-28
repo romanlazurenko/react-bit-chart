@@ -26,11 +26,16 @@ export function PriceChart({
   const handleMouseUp = () => onPauseChange(false);
   const handleMouseLeave = () => onPauseChange(false);
 
+  const transformedTrades = trades.map((trade) => ({
+    ...trade,
+    price: trade.close,
+  }));
+
   return (
     <div style={{ width: "100%", height: "260px" }}>
       <ResponsiveContainer>
         <AreaChart
-          data={trades}
+          data={transformedTrades}
           margin={{ top: 20, right: 30, left: 20, bottom: 60 }}
           onMouseDown={handleMouseDown}
           onMouseUp={handleMouseUp}
@@ -40,13 +45,20 @@ export function PriceChart({
           <XAxis
             dataKey="time"
             domain={xDomain}
-            tickFormatter={(time) => new Date(time).toLocaleTimeString()}
+            tickFormatter={(time) => {
+              const date = new Date(time);
+              return date.toLocaleTimeString([], {
+                hour: "2-digit",
+                minute: "2-digit",
+                hour12: false,
+              });
+            }}
             type="number"
             scale="time"
             interval="preserveStartEnd"
             allowDataOverflow={true}
             tick={{ fontSize: 12 }}
-            tickCount={8}
+            tickCount={12}
             minTickGap={50}
           />
           <YAxis
@@ -62,7 +74,12 @@ export function PriceChart({
           />
           <Tooltip
             labelFormatter={(time) => new Date(time).toLocaleString()}
-            formatter={(value: number) => [`$${value.toFixed(2)}`, "Price"]}
+            formatter={(value: number, name: string) => {
+              if (name === "price") {
+                return [`$${value.toFixed(2)}`, "Price"];
+              }
+              return [`$${value.toFixed(2)}`, name];
+            }}
           />
           <defs>
             <linearGradient id="colorPrice" x1="0" y1="0" x2="0" y2="1">
