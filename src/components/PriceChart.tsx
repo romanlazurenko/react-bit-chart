@@ -12,20 +12,10 @@ import { Trade } from "../services/BinanceService";
 interface PriceChartProps {
   trades: Trade[];
   xDomain: [number | string, number | string];
-  onPauseChange: (isPaused: boolean) => void;
   children?: React.ReactNode;
 }
 
-export function PriceChart({
-  trades,
-  xDomain,
-  onPauseChange,
-  children,
-}: PriceChartProps) {
-  const handleMouseDown = () => onPauseChange(true);
-  const handleMouseUp = () => onPauseChange(false);
-  const handleMouseLeave = () => onPauseChange(false);
-
+export function PriceChart({ trades, xDomain, children }: PriceChartProps) {
   const transformedTrades = trades.map((trade) => ({
     ...trade,
     price: trade.close,
@@ -37,9 +27,6 @@ export function PriceChart({
         <AreaChart
           data={transformedTrades}
           margin={{ top: 20, right: 30, left: 20, bottom: 60 }}
-          onMouseDown={handleMouseDown}
-          onMouseUp={handleMouseUp}
-          onMouseLeave={handleMouseLeave}
         >
           <CartesianGrid strokeDasharray="3 3" />
           <XAxis

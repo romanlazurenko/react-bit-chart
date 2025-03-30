@@ -8,11 +8,6 @@ export interface Trade {
   isClosed: boolean;
 }
 
-export interface BinanceKline {
-  openTime: number;
-  closePrice: number;
-}
-
 export class BinanceService {
   private ws: WebSocket | null = null;
   private reconnectInterval: ReturnType<typeof setInterval> | null = null;
@@ -66,7 +61,7 @@ export class BinanceService {
       if (this.reconnectInterval) {
         clearInterval(this.reconnectInterval);
       }
-      setTimeout(() => this.connect(), 5000);
+      setTimeout(() => this.connect(), 2000);
     };
 
     this.ws.onmessage = (event) => {

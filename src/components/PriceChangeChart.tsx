@@ -6,7 +6,6 @@ import { Trade } from "../services/BinanceService";
 interface PriceChangeChartProps {
   trades: Trade[];
   xDomain: [number | string, number | string];
-  onPauseChange: (isPaused: boolean) => void;
   children?: React.ReactNode;
 }
 
@@ -23,12 +22,14 @@ export function PriceChangeChart({
   const options: ApexOptions = {
     chart: {
       type: "candlestick",
-      height: 460,
       animations: {
         enabled: false,
       },
       toolbar: {
         show: false,
+      },
+      zoom: {
+        enabled: false,
       },
     },
     xaxis: {
@@ -46,7 +47,7 @@ export function PriceChangeChart({
         enabled: true,
       },
       labels: {
-        formatter: (value) => `$${value.toFixed(2)}`,
+        formatter: (value) => `$${value.toFixed(0)}`,
       },
     },
     plotOptions: {
@@ -64,7 +65,7 @@ export function PriceChangeChart({
       enabled: true,
       theme: "dark",
       x: {
-        format: "yyyy-MM-dd HH:mm:ss",
+        format: "MM-dd HH:mm",
       },
       y: {
         formatter: (value) => `$${value.toFixed(2)}`,

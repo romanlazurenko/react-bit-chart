@@ -5,7 +5,6 @@ export function useChartData() {
   const [trades, setTrades] = useState<Trade[]>([]);
   const [isConnected, setIsConnected] = useState(false);
   const pendingTradesRef = useRef<Trade[]>([]);
-  const [isPaused, setIsPaused] = useState(false);
   const serviceRef = useRef<BinanceService | null>(null);
   const [xDomain, setXDomain] = useState<[number, number]>(() => {
     const now = new Date();
@@ -68,7 +67,7 @@ export function useChartData() {
     });
 
     const updateInterval = setInterval(() => {
-      if (!isPaused && pendingTradesRef.current.length > 0) {
+      if (pendingTradesRef.current.length > 0) {
         setTrades((prev) => {
           const newTrades = [...prev];
 
@@ -114,14 +113,14 @@ export function useChartData() {
           return prev;
         });
       }
-    }, 500);
+    }, 1000);
 
     return () => {
       clearInterval(updateInterval);
       service.disconnect();
       serviceRef.current = null;
     };
-  }, [isPaused]);
+  }, []);
 
   const handleZoomChange = (minutes: number | null) => {
     if (minutes === null) {
@@ -140,8 +139,6 @@ export function useChartData() {
   return {
     trades,
     isConnected,
-    isPaused,
-    setIsPaused,
     xDomain,
     handleZoomChange,
   };

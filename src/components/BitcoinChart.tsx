@@ -5,7 +5,7 @@ import { PriceChart } from "./PriceChart";
 import { PriceChangeChart } from "./PriceChangeChart";
 
 export function BitcoinChart() {
-  const { trades, isConnected, setIsPaused } = useChartData();
+  const { trades, isConnected } = useChartData();
   const [xDomain, setXDomain] = useState<[number | string, number | string]>([
     "dataMin",
     "dataMax",
@@ -28,17 +28,9 @@ export function BitcoinChart() {
         Status: {isConnected ? "Connected" : "Disconnecting..."}
       </div>
 
-      <PriceChangeChart
-        trades={trades}
-        xDomain={xDomain}
-        onPauseChange={setIsPaused}
-      />
+      <PriceChangeChart trades={trades} xDomain={xDomain} />
 
-      <PriceChart
-        trades={trades}
-        xDomain={xDomain}
-        onPauseChange={setIsPaused}
-      />
+      <PriceChart trades={trades} xDomain={xDomain} />
 
       <ZoomControls onZoomChange={handleZoomChange} />
     </div>
