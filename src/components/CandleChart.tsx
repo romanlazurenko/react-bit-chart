@@ -25,16 +25,15 @@ export function PriceChangeChart({
       }))
       .sort((a, b) => a.x - b.x);
 
-    // If the last candle is not from the current minute, add a current candle
     const lastCandle = sortedTrades[sortedTrades.length - 1];
     if (lastCandle && lastCandle.x < currentMinute) {
       sortedTrades.push({
         x: currentMinute,
-        y: [lastCandle.y[3], lastCandle.y[3], lastCandle.y[3], lastCandle.y[3]], // Use last close price
+        y: [lastCandle.y[3], lastCandle.y[3], lastCandle.y[3], lastCandle.y[3]],
       });
     }
 
-    return sortedTrades.slice(-100); // Keep only last 100 candles
+    return sortedTrades.slice(-100);
   }, [trades]);
 
   const options: ApexOptions = {
@@ -67,7 +66,7 @@ export function PriceChangeChart({
       type: "datetime",
       min: typeof xDomain[0] === "number" ? xDomain[0] : undefined,
       max: typeof xDomain[1] === "number" ? xDomain[1] : undefined,
-      range: 24 * 60 * 60 * 1000, // Show 24 hours range
+      range: 24 * 60 * 60 * 1000,
       axisBorder: {
         show: true,
         color: "#78909C",
@@ -133,20 +132,6 @@ export function PriceChangeChart({
       mode: "dark",
     },
   };
-
-  // Log xDomain values
-  console.log("xDomain:", {
-    min: xDomain[0],
-    max: xDomain[1],
-    minDate:
-      typeof xDomain[0] === "number"
-        ? new Date(xDomain[0]).toISOString()
-        : xDomain[0],
-    maxDate:
-      typeof xDomain[1] === "number"
-        ? new Date(xDomain[1]).toISOString()
-        : xDomain[1],
-  });
 
   return (
     <div style={{ width: "100%", height: "460px", background: "#000" }}>
